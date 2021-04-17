@@ -46,8 +46,6 @@ namespace DirectChat
 
         private void OnMsg(string msg)
         {
-            // do stuff like adding message to display,
-            // but for now:
             Dispatcher.Invoke(() => { SpawnMessage(msg, true); });
         }
 
@@ -73,7 +71,7 @@ namespace DirectChat
 
         private void SpawnMessage(string msg, bool inbound)
         {
-            Panel.Children.Add(new MessageBubble().Spawn(msg, inbound));
+            Panel.Children.Add(new MessageBubble().Spawn(msg, inbound, DateTime.Now));
             Scroller.ScrollToBottom();
         }
 

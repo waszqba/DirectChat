@@ -35,9 +35,9 @@ namespace DirectChat
             Effect = _shadow;
         }
 
-        public MessageBubble Spawn(string msg, bool inbound)
+        public MessageBubble Spawn(string msg, bool inbound, DateTime time)
         {
-            Child = GetBlock(msg, inbound);
+            Child = GetBlock(msg, inbound, time);
             if (inbound)
                 SetProperties(HorizontalAlignment.Left, _inboundColor, 0, Radius);
             else
@@ -45,15 +45,35 @@ namespace DirectChat
             return this;
         }
 
-        private TextBlock GetBlock(string msg, bool inbound)
+        private StackPanel GetBlock(string msg, bool inbound, DateTime time)
         {
-            return new()
+            var stack = new StackPanel() {
+                MaxWidth = _maxWidth,
+                Background = new SolidColorBrush(inbound ? _inboundColor : _outboundColor),
+                Orientation = Orientation.Horizontal,
+            };
+            stack.Children.Add(new TextBlock()
             {
                 Text = msg,
-                MaxWidth = _maxWidth,
                 TextWrapping = TextWrapping.Wrap,
+                FontSize = 16,
                 Background = new SolidColorBrush(inbound ? _inboundColor : _outboundColor)
-            };
+            });
+            stack.Children.Add(new TextBox()
+            {
+                Text = $"{PadTime(time.Hour)}:{PadTime(time.Minute)}",
+                Background = new SolidColorBrush(inbound ? _inboundColor : _outboundColor),
+                FontSize = 12,
+                Foreground = new SolidColorBrush(Color.FromRgb(128, 128, 128)),
+                BorderBrush = null,
+                VerticalAlignment = VerticalAlignment.Bottom,
+            });
+            return stack;
+        }
+
+        private static string PadTime(int time)
+        {
+            return time < 10 ? $"0{time}" : time.ToString();
         }
 
         private void SetProperties(HorizontalAlignment align, Color color, double left, double right)
