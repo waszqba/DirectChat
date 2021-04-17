@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:DirectChat"
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d"
+        Closing="SetupWindow_OnClosing"
         Title="SetupWindow" Height="225" Width="350">
     <Grid>
         <Grid.ColumnDefinitions>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -51,6 +52,11 @@ namespace DirectChat
             }
 
             if (((MainWindow)Application.Current.MainWindow).Init(_config)) Close();
+        }
+
+        private void SetupWindow_OnClosing(object sender, CancelEventArgs e)
+        {
+            ((MainWindow) Application.Current.MainWindow).RemoteClose();
         }
     }
 }

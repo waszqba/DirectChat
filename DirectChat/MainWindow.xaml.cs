@@ -54,6 +54,11 @@ namespace DirectChat
         private void OnDisconnect()
         {
             MessageBox.Show("Rozmówca się rozłączył, koniec pracy programu.");
+            RemoteClose();
+        }
+
+        public void RemoteClose()
+        {
             Dispatcher.Invoke(Close);
         }
 
