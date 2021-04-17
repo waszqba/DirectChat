@@ -1,0 +1,29 @@
+﻿<Window x:Class="DirectChat.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DirectChat"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="40" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+            <ColumnDefinition Width="Auto"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <ScrollViewer Name="Scroller" Grid.Row="0" Grid.ColumnSpan="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel Name="Panel" Background="#FFECE5DD"/>
+        </ScrollViewer>
+        
+        <TextBox Grid.Column="0" Grid.Row="1"
+                 Name="MyBox"
+                 TextWrapping="Wrap"
+                 KeyDown="MyBox_OnKeyUp"
+                 AcceptsReturn="False"/>
+        <Button Grid.Row="1" Grid.Column="1" Content="Wyślij" Padding="5" Click="ButtonBase_OnClick"></Button>
+    </Grid>
+</Window>
