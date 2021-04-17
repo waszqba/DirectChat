@@ -79,15 +79,9 @@ namespace DirectChat
         {
             var box = (TextBox) sender;
             if (e.Key != Key.Enter) return;
-            if (Keyboard.Modifiers != ModifierKeys.Shift)
-            {
-                SendMessage(box);
-                return;
-            }
-
-            var i = box.CaretIndex;
-            box.Text = box.Text.Insert(i++, "\n");
-            box.CaretIndex = i;
+            if (Keyboard.Modifiers == ModifierKeys.Shift) return;
+            e.Handled = true;
+            SendMessage(box);
         }
 
         private void ButtonBase_OnClick(object sender, RoutedEventArgs e)

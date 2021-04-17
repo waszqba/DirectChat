@@ -52,20 +52,22 @@ namespace DirectChat
                 Background = new SolidColorBrush(inbound ? _inboundColor : _outboundColor),
                 Orientation = Orientation.Horizontal,
             };
-            stack.Children.Add(new TextBlock()
+            stack.Children.Add(new TextBox()
             {
                 Text = msg,
                 TextWrapping = TextWrapping.Wrap,
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true,
+                MaxWidth = _maxWidth - 30,
                 FontSize = 16,
                 Background = new SolidColorBrush(inbound ? _inboundColor : _outboundColor)
             });
-            stack.Children.Add(new TextBox()
+            stack.Children.Add(new TextBlock()
             {
                 Text = $"{PadTime(time.Hour)}:{PadTime(time.Minute)}",
                 Background = new SolidColorBrush(inbound ? _inboundColor : _outboundColor),
                 FontSize = 12,
                 Foreground = new SolidColorBrush(Color.FromRgb(128, 128, 128)),
-                BorderBrush = null,
                 VerticalAlignment = VerticalAlignment.Bottom,
             });
             return stack;

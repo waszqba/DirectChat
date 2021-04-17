@@ -22,8 +22,8 @@
         <TextBox Grid.Column="0" Grid.Row="1"
                  Name="MyBox"
                  TextWrapping="Wrap"
-                 KeyDown="MyBox_OnKeyUp"
-                 AcceptsReturn="False"/>
+                 PreviewKeyDown="MyBox_OnKeyUp"
+                 AcceptsReturn="True"/>
         <Button Grid.Row="1" Grid.Column="1" Content="Wyślij" Padding="5" Click="ButtonBase_OnClick"></Button>
     </Grid>
 </Window>
