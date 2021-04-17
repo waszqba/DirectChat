@@ -20,6 +20,7 @@ namespace DirectChat
     /// </summary>
     public partial class SetupWindow : Window
     {
+        private bool _started = false;
         public SetupWindow()
         {
             InitializeComponent();
@@ -51,12 +52,13 @@ namespace DirectChat
                 _config.remotePort = Int32.Parse(port2Box.Text);
             }
 
-            if (((MainWindow)Application.Current.MainWindow).Init(_config)) Close();
+            _started = ((MainWindow) Application.Current.MainWindow).Init(_config);
+            if (_started) Close();
         }
 
         private void SetupWindow_OnClosing(object sender, CancelEventArgs e)
         {
-            ((MainWindow) Application.Current.MainWindow).RemoteClose();
+            if(!_started) ((MainWindow) Application.Current.MainWindow).RemoteClose();
         }
     }
 }
