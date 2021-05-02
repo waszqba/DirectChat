@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -11,34 +12,43 @@ using System.Windows.Threading;
 
 namespace DirectChat
 {
-    class P2PSocket
+    internal class P2PSocket
     {
         public readonly bool Booted;
-
-        private Socket _socket;
-        private Socket _hostSocket;
-        private byte[] _buffer;
+        public EndPoint? RemoteEndPoint => _socket?.RemoteEndPoint;
+        private Socket? _socket;
+        private Socket? _hostSocket;
+        private byte[]? _buffer;
         private readonly ConnectionMeta _config;
-        private readonly TrialWrapper _sendCallback;
+        private readonly TrialWrapper? _sendCallback;
         private readonly TrialWrapper _acceptCb;
         private readonly TrialWrapper _receiveCb;
         private readonly TrialWrapper _connectCb;
-        private readonly Action<byte[]> _onReceived;
-        private readonly Action _onDisconnect;
-        private readonly Action _onAccept;
+        private readonly Action<byte[]>? _onReceived;
+        private readonly Action? _onDisconnect;
+        private readonly Action? _onAccept;
 
-        public P2PSocket(ConnectionMeta config, Action<byte[]> onReceivedHook, Action onAccept, Action onDisconnectHook)
+        public P2PSocket(ConnectionMeta config, Action<byte[]> onReceivedHook, Action onAccept, Action onDisconnectHook, Socket? socket = null)
         {
             _config = config;
             _connectCb = new TrialWrapper(Connect);
             _acceptCb = new TrialWrapper(Accept);
             _receiveCb = new TrialWrapper(Receive);
-            Booted = new TrialWrapper(SSetup).Proof();
+            Booted = ImplantSocket(socket) || new TrialWrapper(SSetup).Proof();
             if (!Booted) return;
             _onReceived = onReceivedHook;
             _onAccept = onAccept;
             _onDisconnect = onDisconnectHook;
             _sendCallback = new TrialWrapper(Send);
+        }
+
+        private bool ImplantSocket(Socket? socket)
+        {
+            if (socket == null) return false;
+            _socket = socket;
+            _buffer = new byte[_socket.ReceiveBufferSize];
+            _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, _receiveCb.Exec, null);
+            return true;
         }
 
         public void Shutdown()
@@ -56,7 +66,7 @@ namespace DirectChat
             }
         }
 
-        private void SSetup(IAsyncResult ar = null)
+        private void SSetup(IAsyncResult? ar = null)
         {
             var host = _config.host;
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -77,27 +87,23 @@ namespace DirectChat
 
         private void Accept(IAsyncResult AR)
         {
-            _socket = _hostSocket.EndAccept(AR);
-            _buffer = new byte[_socket.ReceiveBufferSize];
-
-            _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, _receiveCb.Exec, null);
+            ImplantSocket(_hostSocket!.EndAccept(AR));
             // it os host's responsibility to enforce protocols
-            _onAccept();
+            _onAccept!();
             _hostSocket.BeginAccept(_acceptCb.Exec, null);
         }
 
         private void Connect(IAsyncResult AR)
         {
-            _socket.EndConnect(AR);
-            _buffer = new byte[_socket.ReceiveBufferSize];
-            _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, _receiveCb.Exec, null);
+            _socket!.EndConnect(AR);
+            ImplantSocket(_socket);
         }
 
         private void Receive(IAsyncResult AR)
         {
             try
             {
-                if (_socket.EndReceive(AR) == 0)
+                if (_socket!.EndReceive(AR) == 0)
                 {
                     HandleDisconnect();
                     return;
@@ -109,20 +115,20 @@ namespace DirectChat
                 return;
             }
             
-            _onReceived(_buffer);
-            _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, _receiveCb.Exec, null);
+            _onReceived!(_buffer!);
+            _socket.BeginReceive(_buffer!, 0, _buffer!.Length, SocketFlags.None, _receiveCb.Exec, null);
         }
 
         private void Send(IAsyncResult ar)
         {
-            _socket.EndSend(ar);
+            _socket!.EndSend(ar);
         }
 
         public bool SendData(byte[] rawData)
         {
             try
             {
-                _socket.BeginSend(rawData, 0, rawData.Length, SocketFlags.None, _sendCallback.Exec, null);
+                _socket!.BeginSend(rawData, 0, rawData.Length, SocketFlags.None, _sendCallback!.Exec, null);
             }
             catch (Exception e) when (e is SocketException || e is ObjectDisposedException)
             {
@@ -136,13 +142,13 @@ namespace DirectChat
         private void HandleDisconnect()
         {
             Shutdown();
-            _onDisconnect();
+            _onDisconnect!();
         }
 
     }
 
 
-    class TrialWrapper
+    internal class TrialWrapper
     {
         private readonly dynamic _fn;
 
