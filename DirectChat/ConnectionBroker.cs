@@ -12,60 +12,65 @@ namespace DirectChat
     /// It also dispatches socket messages to appropriate handlers
     /// and enforces encryption of user messages when RSA is contracted
     /// </summary>
-    class ConnectionBroker
+    internal class ConnectionBroker
     {
-        private readonly P2PSocket _socket;
-        private readonly CryptoBroker _rsa = new();
-        private readonly Action<byte[]> _usrMsg;
+        // private readonly P2PSocket _socket;
+        // private readonly CryptoBroker _rsa = new();
+        private readonly Action<byte[], EndPoint> _usrMsg;
+        private readonly Action<EndPoint> _disconnected;
         private readonly List<Connection> _connections = new();
-        public bool Booted => _socket != null && _socket.Booted;
+        // public bool Booted => _socket != null && _socket.Booted;
+        public bool Booted => _connections.Count > 0 && _connections[0].Booted;
 
-        public ConnectionBroker(ConnectionMeta config, Action<byte[]> userMsgHook, Action disconnectHook)
+        public ConnectionBroker(ConnectionMeta config, Action<byte[], EndPoint> userMsgHook, Action<EndPoint> disconnectHook)
         {
-            _socket = new P2PSocket(config, Received, OnAccept, disconnectHook);
+            // _socket = new P2PSocket(config, Received, OnAccept, disconnectHook);
+            _connections.Add(new Connection(new P2PSocket(config, Received, OnAccept, disconnectHook)));
             _usrMsg = userMsgHook;
+            _disconnected = disconnectHook;
         }
 
         private void Received(byte[] rawBytes)
         {
-            var msg = new SocketMessage(rawBytes);
-            DispatchMessage(msg);
+            // var msg = new SocketMessage(rawBytes);
+            // DispatchMessage(msg);
         }
 
-        private void DispatchMessage(SocketMessage msg)
+        public void NewConvo(ConnectionMeta config)
         {
-            if (msg.IsCrypto)
-                RSAContract(msg.Message);
-            else
-                HandleUsrMsg(msg.Message);
+            _connections.Add(new Connection(new P2PSocket(config, Received, OnAccept, _disconnected), _usrMsg, _disconnected));
         }
 
-        private void HandleUsrMsg(byte[] message)
-        {
-            _usrMsg(_rsa.Contracted ? _rsa.Decrypt(message) : message);
-        }
+        // private void DispatchMessage(SocketMessage msg)
+        // {
+        //     if (msg.IsCrypto)
+        //         RSAContract(msg.Message);
+        //     else
+        //         HandleUsrMsg(msg.Message);
+        // }
 
-        public void SendUsrMsg(byte[] msg)
-        {
-            var toSend = _rsa.Contracted ? _rsa.Encrypt(msg) : msg;
-            _socket.SendData(new SocketMessage(false, toSend).Raw);
-        }
+        // private void HandleUsrMsg(byte[] message)
+        // {
+        //     _usrMsg(_rsa.Contracted ? _rsa.Decrypt(message) : message);
+        // }
 
-        private void RSAContract(byte[] guestKey)
-        {
-            if (_rsa.Contracted) return;
-            var key = _rsa.Handshake(guestKey);
-            _socket.SendData(new SocketMessage(true, key).Raw);
-        }
+        public void SendUsrMsg(byte[] msg, int connectionIndex) => _connections[connectionIndex].SendUsrMsg(msg);
+        // {
+        //     _connections[index].SendUsrMsg(msg);
+        //     // var toSend = _rsa.Contracted ? _rsa.Encrypt(msg) : msg;
+        //     // _socket.SendData(new SocketMessage(false, toSend).Raw);
+        // }
 
-        private void OnAccept()
-        {
-            _socket.SendData(new SocketMessage(true, _rsa.PublicKey).Raw);
-        }
+        // private void RSAContract(byte[] guestKey)
+        // {
+        //     if (_rsa.Contracted) return;
+        //     var key = _rsa.Handshake(guestKey);
+        //     _socket.SendData(new SocketMessage(true, key).Raw);
+        // }
 
         private void OnAccept(P2PSocket socket)
         {
-            _connections.Add(new Connection(socket, _usrMsg, () => { })); // TODO: pass a real action here
+            _connections.Add(new Connection(socket, _usrMsg, _disconnected));
         }
     }
 
@@ -73,18 +78,16 @@ namespace DirectChat
     {
         private readonly P2PSocket _socket;
         private readonly CryptoBroker _rsa = new();
-        private readonly Action<byte[]> _usrMsg;
-        public EndPoint? RemoteEndPoint => _socket.RemoteEndPoint;
+        private readonly Action<byte[], EndPoint>? _usrMsg;
+        private EndPoint? RemoteEndPoint => _socket.RemoteEndPoint;
         public bool Booted => _socket.Booted;
 
-        public Connection(P2PSocket socket, Action<byte[]> userMsgHook, Action disconnectHook)
+        public Connection(P2PSocket socket, Action<byte[], EndPoint>? userMsgHook = null, Action<EndPoint>? disconnectHook = null)
         {
             _socket = socket;
             _usrMsg = userMsgHook;
-        }
-
-        private void OnAccept()
-        {
+            _socket.Reattach(DispatchMessage, disconnectHook);
+            if (disconnectHook == null) return; // only host socket is allowed to do that
             _socket.SendData(new SocketMessage(true, _rsa.PublicKey).Raw);
         }
 
@@ -103,7 +106,7 @@ namespace DirectChat
 
         private void HandleUsrMsg(byte[] message)
         {
-            _usrMsg(_rsa.Contracted ? _rsa.Decrypt(message) : message);
+            _usrMsg?.Invoke(_rsa.Contracted ? _rsa.Decrypt(message) : message, RemoteEndPoint!);
         }
 
         private void DispatchMessage(byte[] rawBytes)

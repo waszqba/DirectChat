@@ -26,39 +26,26 @@ namespace DirectChat
             InitializeComponent();
         }
 
-        private ConnectionMeta _config = new ConnectionMeta();
+        private readonly ConnectionMeta _config = new();
 
         private void Btn_Click(object sender, RoutedEventArgs e)
         {
-            _config.host = (bool)((Button)sender).Tag;
-            if (_config.host)
+            _config.host = true;
+            
+            if (portBox.Text == "")
             {
-                if (portBox.Text == "")
-                {
-                    MessageBox.Show("Jako host musisz podać port", "Nieokreślony port");
-                    return;
-                }
-                _config.port = Int32.Parse(portBox.Text);
+                MessageBox.Show("Musisz podać port, aby móc nasłuchiwać połączeń przychodzących", "Nieokreślony port");
+                return;
             }
-            else
-            {
-                if (ipBox.Text == "" || port2Box.Text == "")
-                {
-                    MessageBox.Show("Jako gość musisz podać adres i port hosta",
-                        "Brakujące dane");
-                    return;
-                }
-                _config.ip = ipBox.Text;
-                _config.remotePort = Int32.Parse(port2Box.Text);
-            }
+            _config.port = int.Parse(portBox.Text);
 
-            _started = ((MainWindow) Application.Current.MainWindow).Init(_config);
+            _started = ((MainWindow) Application.Current.MainWindow!).Init(_config);
             if (_started) Close();
         }
 
         private void SetupWindow_OnClosing(object sender, CancelEventArgs e)
         {
-            if(!_started) ((MainWindow) Application.Current.MainWindow).RemoteClose();
+            if(!_started) ((MainWindow) Application.Current.MainWindow!).RemoteClose();
         }
     }
 }

@@ -27,30 +27,30 @@ namespace DirectChat
         public MainWindow()
         {
             InitializeComponent();
-            SetupWindow config = new SetupWindow();
+            SetupWindow config = new();
             config.Show();
             Hide();
         }
 
-        private MessageBroker _broker;
+        private MessageBroker? _broker;
 
         public bool Init(ConnectionMeta settings)
         {
             _broker = new MessageBroker(settings, OnMsg, OnDisconnect);
             if (_broker.Booted) Show();
-            Application.Current.MainWindow.Title = settings.host
-                ? $"Gospodarz: {GetIp()}:{settings.port}"
-                : $"Połączono w roli gościa z {settings.ip}:{settings.remotePort}";
+            Title = $"Twój adres: {GetIp()}:{settings.port}";
             return _broker.Booted;
         }
 
-        private void OnMsg(string msg)
+        private void OnMsg(string msg, EndPoint endPoint)
         {
             Dispatcher.Invoke(() => { SpawnMessage(msg, true); });
         }
 
-        private void OnDisconnect()
+        private void OnDisconnect(EndPoint endPoint)
         {
+
+            // TODO: target specific conversation
             MessageBox.Show("Rozmówca się rozłączył, koniec pracy programu.");
             RemoteClose();
         }
@@ -63,7 +63,7 @@ namespace DirectChat
         private void SendMessage(TextBox box)
         {
             if (box.Text == "") return;
-            _broker.Send(box.Text + '\0');
+            _broker!.Send(box.Text + '\0');
             // MyBlock.Text = box.Text;
             SpawnMessage(box.Text, false);
             box.Text = "";
@@ -89,18 +89,10 @@ namespace DirectChat
             SendMessage(MyBox);
         }
 
-        private static string GetIp()
+        private static string? GetIp()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (var ip in host.AddressList)
-            {
-                if (ip.AddressFamily == AddressFamily.InterNetwork)
-                {
-                    return ip.ToString();
-                }
-            }
-
-            return null;
+            return (from ip in host.AddressList where ip.AddressFamily == AddressFamily.InterNetwork select ip.ToString()).FirstOrDefault();
         }
     }
 }

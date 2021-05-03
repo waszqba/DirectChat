@@ -15,8 +15,17 @@ namespace DirectChat
     internal class P2PSocket
     {
         public readonly bool Booted;
-        public EndPoint? RemoteEndPoint => _socket?.RemoteEndPoint;
-        private Socket? _socket;
+        public EndPoint? RemoteEndPoint;
+        private Socket? _internalSocket;
+        private Socket? _socket
+        {
+            set
+            {
+                _internalSocket = value;
+                if (value != null) RemoteEndPoint = value.RemoteEndPoint;
+            }
+            get => _internalSocket;
+        }
         private Socket? _hostSocket;
         private byte[]? _buffer;
         private readonly ConnectionMeta _config;
@@ -24,11 +33,11 @@ namespace DirectChat
         private readonly TrialWrapper _acceptCb;
         private readonly TrialWrapper _receiveCb;
         private readonly TrialWrapper _connectCb;
-        private readonly Action<byte[]>? _onReceived;
-        private readonly Action? _onDisconnect;
-        private readonly Action? _onAccept;
+        private Action<byte[]>? _onReceived;
+        private Action<EndPoint>? _onDisconnect;
+        private readonly Action<P2PSocket>? _onAccept;
 
-        public P2PSocket(ConnectionMeta config, Action<byte[]> onReceivedHook, Action onAccept, Action onDisconnectHook, Socket? socket = null)
+        public P2PSocket(ConnectionMeta config, Action<byte[]> onReceivedHook, Action<P2PSocket> onAccept, Action<EndPoint> onDisconnectHook, Socket? socket = null)
         {
             _config = config;
             _connectCb = new TrialWrapper(Connect);
@@ -40,6 +49,13 @@ namespace DirectChat
             _onAccept = onAccept;
             _onDisconnect = onDisconnectHook;
             _sendCallback = new TrialWrapper(Send);
+        }
+
+        public P2PSocket Reattach(Action<byte[]> onReceivedHook, Action<EndPoint>? onDisconnectHook)
+        {
+            _onReceived = onReceivedHook;
+            _onDisconnect = onDisconnectHook ?? _onDisconnect;
+            return this;
         }
 
         private bool ImplantSocket(Socket? socket)
@@ -87,9 +103,9 @@ namespace DirectChat
 
         private void Accept(IAsyncResult AR)
         {
-            ImplantSocket(_hostSocket!.EndAccept(AR));
+            // ImplantSocket(_hostSocket!.EndAccept(AR));
             // it os host's responsibility to enforce protocols
-            _onAccept!();
+            _onAccept!(new P2PSocket(_config, _onReceived!, _onAccept, _onDisconnect!, _hostSocket!.EndAccept(AR)));
             _hostSocket.BeginAccept(_acceptCb.Exec, null);
         }
 
@@ -142,7 +158,7 @@ namespace DirectChat
         private void HandleDisconnect()
         {
             Shutdown();
-            _onDisconnect!();
+            _onDisconnect!(RemoteEndPoint!);
         }
 
     }

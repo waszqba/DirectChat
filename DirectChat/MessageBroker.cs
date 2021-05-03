@@ -1,32 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace DirectChat
 {
-    class MessageBroker
+    internal class MessageBroker
     {
         private readonly ConnectionBroker _connector;
-        private readonly Action<string> _onMessage;
-        public bool Booted => _connector != null && _connector.Booted;
+        private readonly Action<string, EndPoint> _onMessage;
+        public bool Booted => _connector.Booted;
 
-        public MessageBroker(ConnectionMeta config, Action<string> onMessageHook, Action onDisconnectHook)
+        public MessageBroker(ConnectionMeta config, Action<string, EndPoint> onMessageHook, Action<EndPoint> onDisconnectHook)
         {
             _connector = new ConnectionBroker(config, OnMessage, onDisconnectHook);
             _onMessage = onMessageHook;
         }
 
-        private void OnMessage(byte[] raw)
+        private void OnMessage(byte[] raw, EndPoint endPoint)
         {
-            var text = Encoding.Default.GetString(raw);
-            _onMessage(text);
+            _onMessage(Encoding.Default.GetString(raw), endPoint);
         }
 
-        public void Send(string msg)
+        public void Send(string msg, int index = 0)
         {
-            _connector.SendUsrMsg(Encoding.Default.GetBytes(msg));
+            _connector.SendUsrMsg(Encoding.Default.GetBytes(msg), index);
         }
     }
 }
