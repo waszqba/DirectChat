@@ -23,7 +23,7 @@ namespace DirectChat
     {
         private List<TextBlock> _blockList = new();
         private bool _active = false;
-        public MsgTile(string message, EndPoint address, DateTime time)
+        public MsgTile(string message, EndPoint address, DateTime time, bool inbound = true)
         {
             InitializeComponent();
             MsgBlock.Text = message;
@@ -32,7 +32,7 @@ namespace DirectChat
             _blockList.Add(MsgBlock);
             _blockList.Add(AddressBlock);
             _blockList.Add(TimeBlock);
-            SetWeight(true);
+            SetWeight(inbound);
         }
 
         public void Deactivate()

@@ -24,9 +24,15 @@ namespace DirectChat
             _onMessage(Encoding.Default.GetString(raw), endPoint);
         }
 
-        public void Send(string msg, int index = 0)
+        public void Send(string msg, string index)
         {
             _connector.SendUsrMsg(Encoding.Default.GetBytes(msg), index);
         }
+
+        public void NewConvo(ConnectionMeta config)
+        {
+            _connector.NewConvo(config);
+        }
+
     }
 }

@@ -24,6 +24,11 @@ namespace DirectChat
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly Dictionary<string, ChatTemplate> _chatWindows = new();
+        private readonly Dictionary<string, MsgTile> _chatTiles = new();
+        private string _currentConvo = "Nowa Konwersacja";
+        private MessageBroker? _broker;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -31,8 +36,6 @@ namespace DirectChat
             config.Show();
             Hide();
         }
-
-        private MessageBroker? _broker;
 
         public bool Init(ConnectionMeta settings)
         {
@@ -44,7 +47,7 @@ namespace DirectChat
 
         private void OnMsg(string msg, EndPoint endPoint)
         {
-            Dispatcher.Invoke(() => { SpawnMessage(msg, true); });
+            Dispatcher.Invoke(() => { SpawnMessage(msg, endPoint); });
         }
 
         private void OnDisconnect(EndPoint endPoint)
@@ -60,39 +63,79 @@ namespace DirectChat
             Dispatcher.Invoke(Close);
         }
 
-        private void SendMessage(TextBox box)
+        private void SpawnMessage(string msg, EndPoint endPoint)
         {
-            if (box.Text == "") return;
-            _broker!.Send(box.Text + '\0');
-            // MyBlock.Text = box.Text;
-            SpawnMessage(box.Text, false);
-            box.Text = "";
+            var stringPoint = endPoint.ToString()!;
+            if (_chatTiles.ContainsKey(stringPoint))
+            {
+                _chatTiles[stringPoint].NewMessage(msg, DateTime.Now);
+                _chatWindows[stringPoint].SpawnMessage(msg, true);
+                return;
+            }
+            var chatWindow = new ChatTemplate(s =>
+            {
+                _broker!.Send(s, stringPoint);
+                _chatTiles[stringPoint].NewMessage(s, DateTime.Now);
+            })
+            {
+                Visibility = Visibility.Collapsed
+            };
+            if (msg != "") chatWindow.SpawnMessage(msg, true);
+            var chatTile = new MsgTile(msg == "" ? "Nowa Wiadomość" : msg, endPoint, DateTime.Now, msg != "");
+            chatTile.MouseUp += SwitchChat;
+            chatTile.Cursor = Cursors.Hand;
+            _chatTiles.Add(stringPoint, chatTile);
+            _chatWindows.Add(stringPoint, chatWindow);
+            TopicsPanel.Children.Add(_chatTiles[stringPoint]);
+            Grid.SetColumn(chatWindow, 1);
+            MainGrid.Children.Add(_chatWindows[stringPoint]);
         }
 
-        private void SpawnMessage(string msg, bool inbound)
+        private void SwitchChat(object sender, MouseButtonEventArgs? e)
         {
-            Panel.Children.Add(new MessageBubble().Spawn(msg, inbound, DateTime.Now));
-            Scroller.ScrollToBottom();
+            if (_currentConvo != "Nowa Konwersacja")
+            {
+                _chatWindows[_currentConvo].Visibility = Visibility.Collapsed;
+                _chatTiles[_currentConvo].Deactivate();
+            }
+            _currentConvo = sender is string s ? s : ((MsgTile)sender).AddressBlock.Text;
+
+            if (_currentConvo == "Nowa Konwersacja") return;
+
+            _chatWindows[_currentConvo].Visibility = Visibility.Visible;
+            _chatTiles[_currentConvo].Activate();
         }
 
-        private void MyBox_OnKeyUp(object sender, KeyEventArgs e)
+        private void SwitchProxy(object sender, MouseButtonEventArgs e)
         {
-            var box = (TextBox) sender;
-            if (e.Key != Key.Enter) return;
-            if (Keyboard.Modifiers == ModifierKeys.Shift) return;
-            e.Handled = true;
-            SendMessage(box);
-        }
-
-        private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
-        {
-            SendMessage(MyBox);
+            SwitchChat("Nowa Konwersacja", null);
         }
 
         private static string? GetIp()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
             return (from ip in host.AddressList where ip.AddressFamily == AddressFamily.InterNetwork select ip.ToString()).FirstOrDefault();
+        }
+
+        private void ConnectBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (AddressBox.Text == "" || PortBox.Text == "")
+            {
+                MessageBox.Show("Musisz podać adres i port hosta",
+                    "Brakujące dane");
+                return;
+            }
+
+            _broker!.NewConvo(new ConnectionMeta()
+            {
+                ip = AddressBox.Text,
+                remotePort = int.Parse(PortBox.Text),
+                host = false,
+            });
+            var endPoint = new IPEndPoint(IPAddress.Parse(AddressBox.Text), int.Parse(PortBox.Text));
+            var stringPoint = endPoint.ToString();
+            SpawnMessage("", endPoint);
+            SwitchChat(stringPoint, null);
         }
     }
 }

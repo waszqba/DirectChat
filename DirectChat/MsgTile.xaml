@@ -4,9 +4,9 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:DirectChat"
-             mc:Ignorable="d" Height="40" Width="250">
+             mc:Ignorable="d" Height="40">
     <Grid>
-        <Border Name="MainBorder" BorderThickness="0,0,0,1" BorderBrush="#FFEFEFEF">
+        <Border Name="MainBorder" BorderThickness="0,0,0,1" BorderBrush="#FFEFEFEF" Padding="5,0">
             <StackPanel>
                 <Grid>
                     <Grid.ColumnDefinitions>

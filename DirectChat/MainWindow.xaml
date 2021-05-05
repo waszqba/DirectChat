@@ -6,24 +6,34 @@
         xmlns:local="clr-namespace:DirectChat"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="40" />
-        </Grid.RowDefinitions>
+    <Grid Name="MainGrid">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"></ColumnDefinition>
-            <ColumnDefinition Width="Auto"></ColumnDefinition>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <ScrollViewer Name="Scroller" Grid.Row="0" Grid.ColumnSpan="2" VerticalScrollBarVisibility="Auto">
-            <StackPanel Name="Panel" Background="#FFECE5DD"/>
-        </ScrollViewer>
-        
-        <TextBox Grid.Column="0" Grid.Row="1"
-                 Name="MyBox"
-                 TextWrapping="Wrap"
-                 PreviewKeyDown="MyBox_OnKeyUp"
-                 AcceptsReturn="True"/>
-        <Button Grid.Row="1" Grid.Column="1" Content="Wyślij" Padding="5" Click="ButtonBase_OnClick"></Button>
+        <Border BorderThickness="0,0,1,0" BorderBrush="#FFEFEFEF">
+            <StackPanel Name="TopicsPanel">
+                <Border MouseUp="SwitchProxy" Cursor="Hand"
+                        Padding="5,5,5,0"
+                        BorderThickness="0,0,0,1" BorderBrush="#FFEFEFEF" Background="White">
+                    <StackPanel>
+                        <TextBlock FontWeight="Bold">Nowa Konwersacja</TextBlock>
+                        <TextBlock HorizontalAlignment="Right" FontSize="16">+</TextBlock>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+        <StackPanel Grid.Column="1" Name="NewConvoForm" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" Margin="0 5">
+                <Label Width="100" Margin="5,0">Adres rozmówcy</Label>
+                <TextBox Name="AddressBox"  Width="150"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Width="100" Margin="5,0">Port rozmówcy</Label>
+                <TextBox Name="PortBox" Width="150"/>
+            </StackPanel>
+            <Button Name="ConnectBtn" Margin="5" Click="ConnectBtn_Click">Połącz</Button>
+        </StackPanel>
+        <!-- <local:ChatTemplate Grid.Column="1" x:Name="ChatTemplate"/> -->
     </Grid>
 </Window>

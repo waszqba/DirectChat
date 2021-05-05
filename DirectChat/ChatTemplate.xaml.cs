@@ -20,23 +20,24 @@ namespace DirectChat
     /// </summary>
     public partial class ChatTemplate : UserControl
     {
-        public Action<string>? Send;
+        private Action<string> _send;
 
-        public ChatTemplate()
+        public ChatTemplate(Action<string> send)
         {
             InitializeComponent();
+            _send = send;
         }
 
         private void SendMessage(TextBox box)
         {
             var text = box.Text.Trim();
-            if (text == "" || Send == null) return;
-            Send(text + '\0');
+            if (text == "") return;
+            _send(text + '\0');
             SpawnMessage(text, false);
             box.Text = "";
         }
 
-        private void SpawnMessage(string msg, bool inbound)
+        public void SpawnMessage(string msg, bool inbound)
         {
             Panel.Children.Add(new MessageBubble().Spawn(msg, inbound, DateTime.Now));
             Scroller.ScrollToBottom();
