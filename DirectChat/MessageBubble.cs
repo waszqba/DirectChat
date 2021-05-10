@@ -35,9 +35,9 @@ namespace DirectChat
             Effect = _shadow;
         }
 
-        public MessageBubble Spawn(string msg, bool inbound, DateTime time)
+        public MessageBubble Spawn(string msg, bool inbound, DateTime time, bool final)
         {
-            Child = GetBlock(msg, inbound, time);
+            Child = GetBlock(msg, inbound, time, final);
             if (inbound)
                 SetProperties(HorizontalAlignment.Left, _inboundColor, 0, Radius);
             else
@@ -45,14 +45,15 @@ namespace DirectChat
             return this;
         }
 
-        private StackPanel GetBlock(string msg, bool inbound, DateTime time)
+        private StackPanel GetBlock(string msg, bool inbound, DateTime time, bool final)
         {
+            var grayBrush = new SolidColorBrush(Color.FromRgb(128, 128, 128));
             var stack = new StackPanel() {
                 MaxWidth = _maxWidth,
                 Background = new SolidColorBrush(inbound ? _inboundColor : _outboundColor),
                 Orientation = Orientation.Horizontal,
             };
-            stack.Children.Add(new TextBox()
+            var messageBox = new TextBox()
             {
                 Text = msg,
                 TextWrapping = TextWrapping.Wrap,
@@ -61,13 +62,19 @@ namespace DirectChat
                 MaxWidth = _maxWidth - 30,
                 FontSize = 16,
                 Background = new SolidColorBrush(inbound ? _inboundColor : _outboundColor)
-            });
+            };
+            if (final)
+            {
+                messageBox.Foreground = grayBrush;
+                messageBox.FontStyle = FontStyles.Italic;
+            }
+            stack.Children.Add(messageBox);
             stack.Children.Add(new TextBlock()
             {
                 Text = $"{PadTime(time.Hour)}:{PadTime(time.Minute)}",
                 Background = new SolidColorBrush(inbound ? _inboundColor : _outboundColor),
                 FontSize = 12,
-                Foreground = new SolidColorBrush(Color.FromRgb(128, 128, 128)),
+                Foreground = grayBrush,
                 VerticalAlignment = VerticalAlignment.Bottom,
             });
             return stack;

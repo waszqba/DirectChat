@@ -52,10 +52,8 @@ namespace DirectChat
 
         private void OnDisconnect(EndPoint endPoint)
         {
-
-            // TODO: target specific conversation
-            MessageBox.Show("Rozmówca się rozłączył, koniec pracy programu.");
-            RemoteClose();
+            var stringPoint = endPoint.ToString()!;
+            _chatWindows[stringPoint].FinalizeChat();
         }
 
         public void RemoteClose()
